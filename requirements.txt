@@ -1,0 +1,9 @@
+streamlit
+langchain_community
+langchain
+langchain_groq
+chromadb
+fastapi
+uvicorn
+gpt4all
+beautifulsoup4
