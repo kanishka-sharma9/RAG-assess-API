@@ -13,29 +13,47 @@ os.environ['GROQ_API_KEY']=os.getenv("GROQ_API_KEY")
 
 llm=ChatGroq(model_name="llama-3.3-70b-versatile")
 
-DB=None
+# DB=None
+data=None
+with open('shl_assessment_links.json', 'r') as file:
+    data = json.load(file)
+
+URLs=[joda['url'] for joda in data]
+print("starting docs loading")
+initial_docs=WebBaseLoader(
+    web_paths=URLs,
+    bs_kwargs=dict(
+        parse_only=bs4.SoupStrainer(
+            class_=("col-12 col-md-8",)
+        )
+    ),
+).load()
+print("docs loaded")
+
+DB=Chroma.from_documents(initial_docs,embedding=GPT4AllEmbeddings(),collection_name="RAG")
+
 app=FastAPI()
 @app.post('/generate')
-def get_rag_op(JD:str) -> str:
-    global DB
-    if DB is None:
-        data=None
-        with open('shl_assessment_links.json', 'r') as file:
-            data = json.load(file)
+def get_rag_output(JD:str) -> str:
+    # global DB
+    # if DB is None:
+    #     data=None
+    #     with open('shl_assessment_links.json', 'r') as file:
+    #         data = json.load(file)
         
-        URLs=[joda['url'] for joda in data]
-        print("starting docs loading")
-        initial_docs=WebBaseLoader(
-            web_paths=URLs,
-            bs_kwargs=dict(
-                parse_only=bs4.SoupStrainer(
-                    class_=("col-12 col-md-8",)
-                )
-            ),
-        ).load()
-        print("docs loaded")
+    #     URLs=[joda['url'] for joda in data]
+    #     print("starting docs loading")
+    #     initial_docs=WebBaseLoader(
+    #         web_paths=URLs,
+    #         bs_kwargs=dict(
+    #             parse_only=bs4.SoupStrainer(
+    #                 class_=("col-12 col-md-8",)
+    #             )
+    #         ),
+    #     ).load()
+    #     print("docs loaded")
         
-        DB=Chroma.from_documents(initial_docs,embedding=GPT4AllEmbeddings(),collection_name="RAG")
+    #     DB=Chroma.from_documents(initial_docs,embedding=GPT4AllEmbeddings(),collection_name="RAG")
 
     docs=DB.similarity_search(JD,k=10)
     prompt=f"""
